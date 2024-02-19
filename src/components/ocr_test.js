@@ -59,31 +59,11 @@ const OCRComponent = () => {
         console.log(inferTextsString);
 
         const message = [                        // 프롬프트
-          {role: "system", content: `Analyze the given receipt text in Korean to identify and extract only the product names (items) and their corresponding approval numbers or tax deduction numbers. The receipt may list various items, and the approval number or tax deduction number is typically located immediately after the words "승인번호" or "공제번호". Ensure to extract this information accurately and format the output in JSON, adhering to these guidelines:
-            - Product names can vary widely and may include any item listed on the receipt.
-            - The approval or tax deduction number follows the label "승인번호" or "공제번호" directly and can be alphanumeric.
-            - The required output is a JSON object containing an array of entries, each with the item name and its corresponding approval number or tax deduction number.
-
-            The JSON format should enable easy identification of each item along with its approval or tax deduction number, excluding all unrelated information. Provide a clear and concise output that reflects the diverse nature of items that could appear on a receipt and the specific manner in which approval numbers are presented.
-
-            Example of the improved JSON output format:
-
-            {
-              "extracted_data": [
-                {
-                  "item": "<item_name_1>",
-                  "approval_number": "<approval_number_1>"
-                },
-                {
-                  "item": "<item_name_2>",
-                  "approval_number": "<approval_number_2>"
-                },
-                // Add more items as necessary
-              ]
-            }
-
-            Please focus on extracting this information precisely and ensure that the JSON output is structured to provide a clear representation of the extracted data, making no assumptions about the item types or specific formats of approval numbers.`},
-          { role: "user", content: `${inferTextsString}` },
+          {
+            role: "system",
+            content: "영수증 사진을 OCR한 텍스트 결과가 주어질 것이다. 내용을 파악하여 '품목'과 '승인번호/공제번호' 2가지만을(수량이나 가격 같은 것은 기입할 필요 없음) json형식으로만 간단히 출력하시오. 추가적인 부가 설명은 절대 붙히지 말것",
+          },  
+          { role: "user", content: `${inferTextsString}` }, 
         ];
 
         console.log("== Post GPT API ==");
@@ -105,9 +85,9 @@ const OCRComponent = () => {
             text: choice.message.content,
           };
 
+          console.log(choice.message.content);
           setMessages((prevMessages) => [...prevMessages, newMessage]);
         }
-        console.log(messages);
       } catch (error) {
         console.error('Error occurred while performing OCR:', error);
       }

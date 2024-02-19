@@ -5,7 +5,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Home from './components/home.js';
 import Acc from './components/account.js';
 import OCR from './components/ocr_test.js';
-import TEST from './components/test_test.js';
+import TEST from './components/manage.js';
 
 
 function App() {
@@ -16,8 +16,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/account" element={<Acc />} />
           <Route path="/ocr" element={<OCR />} />
-          <Route path="/test" element={<TEST />} />
-
+          <Route path="/manage" element={<TEST />} />
         </Routes>
       </BrowserRouter>
     </div>
