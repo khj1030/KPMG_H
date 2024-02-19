@@ -66,6 +66,7 @@
   overflow-y: scroll;
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+  padding-bottom: 5px;
 }
 .chatbotBody::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera*/
@@ -106,6 +107,7 @@
 }
 .user{
   margin-left: 13px;
+  height: 41px;
 }
 .chatbotChat{
   background-color: #FAFAFB;

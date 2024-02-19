@@ -237,7 +237,27 @@ const Account = () => {
       setState({ content: "" }); // 입력 필드 초기화
 
       const messages = [                        // 프롬프트
-        { role: "user", content: `${inputText}이 뭐야?` },
+        {role: "system", content: `Design an AI tool that interprets brief descriptions of transactions provided by users to recommend suitable accounting entries and summaries. The output should be in a well-structured JSON format, offering a clear and actionable accounting guideline based on the provided transaction details.
+            Input
+            Users provide a concise description of a transaction, including the nature of the transaction, items or services involved, and the payment method.
+
+            Process
+            * 		Transaction Analysis: Analyze the provided description to identify key elements of the transaction (e.g., transaction nature, payment method).
+            * 		Account Matching: Based on the identified elements, determine the appropriate debit and credit accounts.
+            * 		Summary Generation: Craft a summary reflecting the key details of the transaction.
+            * 		JSON Formatting: Generate a JSON object that includes the recommended accounts and summary.
+
+
+            Output Example
+            json
+            “””
+            { "transaction_analysis": { "description": "Office supplies purchase for the upcoming project, to be paid on credit.", "recommendations": { "debit_account": "Office Supplies", "credit_account": "Accounts Payable", "summary": "Acquisition of office supplies for project XYZ, payment deferred to next month." } } }
+            “””
+            Considerations
+            * Accuracy and Clarity: Recommendations must adhere to standard accounting practices and be easily understandable by users.
+            * User-Friendly: The JSON output should be readable for humans and easily parsable by machines.
+            * Dynamic Responsiveness: The system should flexibly accommodate a variety of transaction scenarios.`},
+        { role: "user", content: `${inputText}` },
       ];
 
       console.log("== Post GPT API ==");
@@ -245,8 +265,14 @@ const Account = () => {
       const client = new OpenAIClient(endpoint, new AzureKeyCredential(azureApiKey));
       const result = await client.getChatCompletions(deploymentId, messages);
 
+      
       for (const choice of result.choices) {
         console.log(choice.message);
+        // const summary = choice.message["transaction_analysis"]["recommendations"]
+
+        // const summary_messages = [                        // 프롬프트
+        //   { role: "user", content: `Please translate ${summary} into Korean` },
+        // ];
         const newMessage = {
           id: Date.now(),
           sender: "bot",
