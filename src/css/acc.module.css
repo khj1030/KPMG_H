@@ -195,3 +195,10 @@
   justify-content: right;
   margin-top: 13.62px;
 }
+
+.sortBtn{
+  color: white;
+  margin-left: 15px;
+  border-bottom:1px solid white;
+  cursor: pointer;
+}

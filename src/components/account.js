@@ -42,6 +42,10 @@ const Account = () => {
   const [messages, setMessages] = useState([]);
   const [messages_SEC, setMessages_SEC] = useState([]);
   const [inputValue, setInputValue] = useState('');
+  const [selectedRows, setSelectedRows] = useState([]);
+
+  // const [selectedRows, setSelectedRows] = useState([]);
+  const [imageURLs, setImageURLs] = useState([]);
 
   const [transactionData, setTransactionData] = useState({
     debit_account: '',
@@ -69,13 +73,21 @@ const Account = () => {
     }
   }
   const handleBillClick = (rowIndex) => {
+    const isSelected = selectedRows.includes(rowIndex);
+  
+    // 이미 선택된 행이면 선택을 해제하고, 아니면 선택을 추가합니다.
+    if (isSelected) {
+      setSelectedRows(selectedRows.filter(index => index !== rowIndex));
+    } else {
+      setSelectedRows([...selectedRows, rowIndex]);
+    }
     const input = document.getElementById('billFileInput');
     input.click();
+
   };
-
-
+  
   const handleBillFileUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0]; 
     handleOCRRequest(file);
   }
   const handleOCRRequest = async (file) => {
@@ -86,8 +98,18 @@ const Account = () => {
     // const file = fileInput.files[0];
     const row_index = rowIndexData;
     if (file) {
+
       const formData = new FormData();
       formData.append('file', file);
+      
+      // 이미지 파일인지 확인
+      const isImageFile = file.type.startsWith('image/');
+      console.log(file);
+      if (isImageFile) {
+        // 이미지를 웹에서 확인할 수 있도록 URL 생성
+        const imageUrl = URL.createObjectURL(file);
+        setImageURLs(prevImageURLs => [...prevImageURLs, imageUrl]);
+      }
 
       const fileName = file.name;
       const fileExtension = fileName.split('.').pop().toLowerCase();
@@ -141,7 +163,7 @@ const Account = () => {
         const message = [                        // 프롬프트
           {
             role: "system",
-            content: "영수증 사진을 OCR한 텍스트 결과가 주어질 것이다. 내용을 파악하여 '품목'과 '승인번호' 2가지만을(수량이나 가격 같은 것은 기입할 필요 없음) json형식으로만 간단히 출력하시오. 이때, 주유 관련 내용으로 추정되는 경우, LPG, 휘발유 등을 '품목'으로 출력하시오. 추가적인 부가 설명은 절대 붙히지 말것",
+            content: "영수증 사진을 OCR한 텍스트 결과가 주어질 것이다. 내용을 파악하여 '품목'과 '승인번호' 2가지만을(수량이나 가격 같은 것은 기입할 필요 없음) json형식으로만 간단히 출력하시오. 이때, 주유 관련 내용으로 추정되는 경우, LPG, 휘발유, 경우 등을 '품목'으로 출력하시오. 추가적인 부가 설명은 절대 붙히지 말것",
           },  
           { role: "user", content: `${inferTextsString}` }, 
         ];
@@ -362,7 +384,7 @@ const Account = () => {
                         적요: 신규입사자 사무용품 구매 / 사무용품 구매 
 
                         2. 회사차량 / 출장 중에 주유했을 경우 
-                        (카드로 주유시) 
+                        (법인카드로 주유시) 
                         차변계정: 차량 유지비 
                         대변계졍: 미지급금
                         적요: 주유비 
@@ -392,7 +414,12 @@ const Account = () => {
                         대변계정: 미지급금
                         적요: 직원 결혼식 화환 구매
 
-                        6. 주의사항 
+                        6. 부서에 필요한 물품(예: 의자)을 구입한 경우
+                        차변계정: 자산(비품)
+                        대변계졍: 미지급금
+                        적요: 사무용의자 구매
+
+                        7. 주의사항 
                         법인카드의 경우, 개인꺼 사려고 개인이 썼더라도 무조건 신고해야함(올려야 함)
 
                         {
@@ -564,7 +591,7 @@ const Account = () => {
         // const jsonStringPrint = choice.message.content.replace(/^```json\n{\n([\s\S]*)\n}\n```$/, '$1');
         const jsonObject = JSON.parse(jsonString);
         
-        const debit_account = jsonObject["debit_account"];
+        let debit_account = jsonObject["debit_account"];
         const credit_account = jsonObject["credit_account"];
         const summary = jsonObject["summary"];
 
@@ -574,6 +601,23 @@ const Account = () => {
           summary: jsonObject["summary"]
         });
 
+        const storedWordDict = localStorage.getItem('wordDict');
+
+        // 가져온 데이터가 존재하는지 확인합니다.
+        if (storedWordDict) {
+          // JSON 형식의 문자열을 JavaScript 객체로 변환합니다.
+          const wordDict = JSON.parse(storedWordDict);
+          console.log("debit_account:", debit_account);
+          console.log("wordDict.debit_account:", wordDict[debit_account]);
+          if(wordDict[debit_account]){
+            debit_account = wordDict[debit_account];
+          }
+          // 가져온 wordDict를 변수에 저장합니다.
+          console.log('로컬 스토리지에서 가져온 wordDict:', wordDict);
+        } else {
+          console.log('로컬 스토리지에 wordDict가 존재하지 않습니다.');
+        }
+        
         const stringText = `차변계정: ${debit_account}\n대변계정: ${credit_account}\n추천적요: ${summary}`;
         
         const newMessage = {
@@ -583,6 +627,8 @@ const Account = () => {
         };
 
         setMessages_SEC((prevMessages) => [...prevMessages, newMessage]);
+
+
       }
       
     }
@@ -664,8 +710,7 @@ const Account = () => {
                 {filterRowsByDateRange(excelData.data, state.startDate, state.endDate).map((row, rowIndex) => (
                   <tr key={rowIndex} onClick={() => handleRowClick(rowIndex)} style={{ backgroundColor: selectedRow === rowIndex ? 'rgba(231, 192, 57, 0.22)' : 'white' }}>
                     <td onClick={() => handleBillClick(rowIndex)}>
-                      {selectedRow === rowIndex ? <img src="img/bill.png" alt="bill" /> : ''}
-                    </td>
+                        {selectedRows.includes(rowIndex) ? <img src="img/bill.png" alt="bill" /> : ''}                    </td>
                     {row.map((cell, cellIndex) => (
                       <td key={cellIndex} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cell}</td>
                     ))}

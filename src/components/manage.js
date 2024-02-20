@@ -23,14 +23,7 @@ const Account = () => {
   
   const [selectedRow, setSelectedRow] = useState(null); // 선택된 행의 인덱스를 저장하는 상태 추가
   const [selectedRowData, setSelectedRowData] = useState(null); // 선택된 행의 데이터를 저장하는 상태 추가
-  // const [excelData, setExcelData] = useState({
-  //   columns: [],
-  //   data: [],
-  // });
-  // const [excelFilteredData, setexcelFilteredData] = useState({
-  //   columns: [],
-  //   data: [],
-  // });
+
   const [fileUploaded, setFileUploaded] = useState(false); // 파일이 업로드되었는지 여부를 추적하는 상태 추가
   const uploadInputRef = useRef(null); // input 요소를 참조하기 위한 ref
 
@@ -43,20 +36,49 @@ const Account = () => {
     columns: [],
     data: [],
   });
-  
-  useEffect(() => {
-    // 페이지가 처음 로드될 때 로컬 스토리지에서 데이터를 가져와서 설정합니다.
+
+  const handleFileManage= (e) => {
+    setFileUploaded(true);
+    console.log("!!");
+    const savedExcelData = JSON.parse(localStorage.getItem('excelData'));
+    setExcelData(prevState => ({
+      columns: savedExcelData.columns, 
+      data: savedExcelData.data, 
+    }));
+  };
+
+  const findIndexes = () => {
+    const indexes = [];
+    excelData.data.forEach((row, index) => {
+      const trader = row[excelData.columns.indexOf('거래처')];
+      const account = row[excelData.columns.indexOf('차변계정')];
+      if (trader === 'D문구점' && account !== '소모품비') {
+        indexes.push(index);
+      }
+      if (trader === 'B주유소' && account !== '차량 유지비') {
+        indexes.push(index);
+      }
+    });
+    return indexes;
+  };
+  const invalidIndexes = findIndexes();
+
+  const sortingExcel = (e) => {
     const savedExcelData = JSON.parse(localStorage.getItem('excelData'));
     if (savedExcelData) {
-      // 데이터를 가져와서 거래처 컬럼을 기준으로 오름차순 정렬합니다.
       const sortedData = [...savedExcelData.data].sort((a, b) => {
         const traderA = a[savedExcelData.columns.indexOf('거래처')];
         const traderB = b[savedExcelData.columns.indexOf('거래처')];
         return traderA.localeCompare(traderB);
       });
-      setExcelData(prevState => ({ ...prevState, data: sortedData }));
+      setExcelData(prevState => ({
+        columns: savedExcelData.columns, // 저장된 컬럼 설정
+        data: sortedData, // 정렬된 데이터 설정
+      }));
     }
-  }, []); // 빈 배열을 전달하여 컴포넌트가 마운트될 때만 실행되도록 설정합니다.
+  };
+
+
 
   const handleChangeState = (e) => {
     setState({
@@ -64,14 +86,6 @@ const Account = () => {
       [e.target.name]: e.target.value,
     });
   };
-
-  const handleExcelDownload = () => {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([excelData.columns, ...excelData.data]);
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, "data.xlsx");
-  };
-  
   
   function chatGPTModify(E){
     if(!showChatbotModify){
@@ -153,7 +167,37 @@ const Account = () => {
       setMessages_SEC((prevMessages) => [...prevMessages, newMessage]);
       setState({ content: "" }); // 입력 필드 초기화
       
+      console.log(inputText);
+      const str = `우리 회사는 "식대"를 "복리후생비"가 아니라 "의욕관리비"로 처리할거야.`;
 
+      // 정규 표현식을 사용하여 따옴표 안의 단어를 추출하여 리스트로 만듭니다.
+      const regex = /"(.*?)"/g;
+      let match;
+      const wordList = [];
+
+      while ((match = regex.exec(str)) !== null) {
+        const word = match[1]; // 따옴표 안의 단어 추출
+        wordList.push(word);
+      }
+      console.log(wordList);
+      // 리스트를 딕셔너리로 변환합니다.
+      const wordDict = {};
+      for (let i = 0; i < wordList.length; i += 2) {
+        const key = wordList[i + 1];
+        const value = wordList[i + 2];
+        wordDict[key] = value;
+      }
+      localStorage.setItem('wordDict', JSON.stringify(wordDict));
+
+      console.log(wordDict);
+
+      const newMessageGPT = {
+        id: Date.now(),
+        sender: "bot",
+        text: `네, 수정완료했습니다!\n이제 ${wordList[0]} 관련 차변계정은 ${wordList[1]}이 아닌 ${wordList[2]}로 안내하게 됩니다.`,
+      };
+      chatGPTModify();
+      setMessages_SEC((prevMessages) => [...prevMessages, newMessageGPT]);
 
     }
     console.log(messages);
@@ -161,6 +205,14 @@ const Account = () => {
 
   return (
     <div className={style["background"]}>
+      {!fileUploaded && (
+        <div className={style["fileUploadBox"]}>
+          <img className={style["upload"]} alt="upload" src="img/upload.png" />
+          <div className={style["fileUploadText"]}></div>
+          <div className={style["generalText"]}></div>
+          <div className={style["uploadButton"]} onClick={handleFileManage}>파일 불러오기</div>
+        </div>
+      )}
       {excelData.columns.length > 0 && (
         <div>
           <div className={style["excelDate"]}>
@@ -186,6 +238,7 @@ const Account = () => {
                 className={style["date"]}
               />
             </div>
+            <div className={style["sortBtn"]} onClick={sortingExcel}>정렬하기</div>
           </div>
           <div className={style["excelTable"]}>
             <table>
@@ -199,10 +252,19 @@ const Account = () => {
               </thead>
               <tbody>
                 {excelData.data.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    <td></td>
+                  <tr key={rowIndex} style={{ backgroundColor: invalidIndexes.includes(rowIndex) ? 'pink' : 'inherit' }}>
+                    <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {/* '품명' 컬럼 데이터 값이 '의자', '경유', '활전복죽회국수'인 경우 이미지 삽입 */}
+                      {row[excelData.columns.indexOf('품명')] === '의자' ||
+                        row[excelData.columns.indexOf('품명')] === '경유' ||
+                        row[excelData.columns.indexOf('품명')] === '활전복죽회국수' ? (
+                        <img src="img/bill.png" alt="bill" />
+                      ) : null}
+                    </td>
                     {row.map((cell, cellIndex) => (
-                      <td key={cellIndex} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cell}</td>
+                      <td key={cellIndex} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {cell}
+                      </td>
                     ))}
                   </tr>
                 ))}
