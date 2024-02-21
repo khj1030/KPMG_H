@@ -401,7 +401,7 @@ const Account = () => {
 
                         4-1. 회사카드로 점심/저녁 먹었을 때 (이 때 같이 밥 먹은 사람이 4대 보험자 기준 자회사 소속일 때)
                         차변계정: 복리후생비 
-                        대변계정: 위와동일 
+                        대변계정: 현금
                         적요: 점심 식대 / 석 식대 
 
                         4-2. 회사카드로 점심/저녁 먹었을 때 ( 같이 밥먹은 사람이 우리회사에서 일해도 4대보험 가입 안되어 있을 때) 
@@ -605,12 +605,26 @@ const Account = () => {
 
         // 가져온 데이터가 존재하는지 확인합니다.
         if (storedWordDict) {
-          // JSON 형식의 문자열을 JavaScript 객체로 변환합니다.
           const wordDict = JSON.parse(storedWordDict);
+          // JSON 형식의 문자열을 JavaScript 객체로 변환합니다.
           console.log("debit_account:", debit_account);
           console.log("wordDict.debit_account:", wordDict[debit_account]);
           if(wordDict[debit_account]){
-            debit_account = wordDict[debit_account];
+            const word_debit_account = wordDict[debit_account];
+            const stringText = `차변계정: ${word_debit_account}\n대변계정: ${credit_account}\n추천적요: ${summary}`;
+            
+            const newMessage = {
+              id: Date.now(),
+              sender: "bot",
+              text: stringText,
+            };
+    
+            setMessages_SEC((prevMessages) => [...prevMessages, newMessage]);
+            setTransactionData({
+              debit_account: word_debit_account,
+              credit_account: jsonObject["credit_account"],
+              summary: jsonObject["summary"]
+            });
           }
           // 가져온 wordDict를 변수에 저장합니다.
           console.log('로컬 스토리지에서 가져온 wordDict:', wordDict);
@@ -618,15 +632,6 @@ const Account = () => {
           console.log('로컬 스토리지에 wordDict가 존재하지 않습니다.');
         }
         
-        const stringText = `차변계정: ${debit_account}\n대변계정: ${credit_account}\n추천적요: ${summary}`;
-        
-        const newMessage = {
-          id: Date.now(),
-          sender: "bot",
-          text: stringText,
-        };
-
-        setMessages_SEC((prevMessages) => [...prevMessages, newMessage]);
 
 
       }
