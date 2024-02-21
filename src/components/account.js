@@ -103,14 +103,14 @@ const Account = () => {
       const formData = new FormData();
       formData.append('file', file);
       
-      // 이미지 파일인지 확인
-      const isImageFile = file.type.startsWith('image/');
-      console.log(file);
-      if (isImageFile) {
-        // 이미지를 웹에서 확인할 수 있도록 URL 생성
-        const imageUrl = URL.createObjectURL(file);
-        setImageURLs(prevImageURLs => [...prevImageURLs, imageUrl]);
-      }
+      // // 이미지 파일인지 확인
+      // const isImageFile = file.type.startsWith('image/');
+      // console.log(file);
+      // if (isImageFile) {
+      //   // 이미지를 웹에서 확인할 수 있도록 URL 생성
+      //   const imageUrl = URL.createObjectURL(file);
+      //   setImageURLs(prevImageURLs => [...prevImageURLs, imageUrl]);
+      // }
       
 
       const fileName = file.name;
@@ -631,7 +631,16 @@ const Account = () => {
           // 가져온 wordDict를 변수에 저장합니다.
           console.log('로컬 스토리지에서 가져온 wordDict:', wordDict);
         } else {
-          console.log('로컬 스토리지에 wordDict가 존재하지 않습니다.');
+          const stringText = `차변계정: ${debit_account}\n대변계정: ${credit_account}\n추천적요: ${summary}`;
+            
+            const newMessage = {
+              id: Date.now(),
+              sender: "bot",
+              text: stringText,
+            };
+    
+            setMessages_SEC((prevMessages) => [...prevMessages, newMessage]);
+
         }
         
 
