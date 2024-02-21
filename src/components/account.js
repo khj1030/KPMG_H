@@ -14,6 +14,7 @@ const Account = () => {
   // let rowIndexData = 0;
   const [rowIndexData, setRowIndexData] = useState(0);
   const [imgInserted, setImgInserted] = useState(0);
+  const [imageUrls, setImageUrls] = useState([]);
 
   const [state, setState] = useState({
     content: "",
@@ -110,6 +111,7 @@ const Account = () => {
         const imageUrl = URL.createObjectURL(file);
         setImageURLs(prevImageURLs => [...prevImageURLs, imageUrl]);
       }
+      
 
       const fileName = file.name;
       const fileExtension = fileName.split('.').pop().toLowerCase();
@@ -415,7 +417,7 @@ const Account = () => {
                         적요: 직원 결혼식 화환 구매
 
                         6. 부서에 필요한 물품(예: 의자)을 구입한 경우
-                        차변계정: 자산(비품)
+                        차변계정: 비품
                         대변계졍: 미지급금
                         적요: 사무용의자 구매
 
